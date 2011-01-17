@@ -1,0 +1,447 @@
+define w fitnesie
+
+
+	
+FitNesse & Selenium - Varying Input on FitNesse Tests
+Click to flag this post
+
+by Krista Bledsoe Dec 19, 2007; 05:30pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Print | View Threaded | Show Only this Message
+I am trying to automate some tests using both FitNesse and Selenium. I
+am using a DoFixture from the Fitlibrary for .NET.  I've got everything
+working properly, except I would like to see if there is a way to vary
+the input for the FitNesse test. For example, here is my FitNesse test:
+
+|!SeleniumFixture-!|
+|open|/MyWebApp/||
+|clickAndWait|//img[@alt='button image']||
+|User types|Login_Username|into|krista|field|
+|User types|Login_Password|into|1234|field|
+|clickAndWait|//input[@value='Log In']|
+
+I would like to be able to set the username & password fields (krista,
+1234) to another Fitnesse table (or external file), then have FitNesse
+loop through each of the data points. I have been searching and
+brainstorming different ways to do this, but I haven't come up with
+anything yet. Does anyone have any ideas on this?? Any help is greatly
+appreciated!!!
+
+
+	
+Re: FitNesse & Selenium - Varying Input on FitNesse Tests
+Click to flag this post
+
+by andydassing Dec 19, 2007; 08:45pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Print | View Threaded | Show Only this Message
+Parameterized Include Pages may fit your need.  Convert your test
+page to an includable page with variables, then create a new page
+that includes the test page after setting the variables to new values.
+
+For example, user name is held in UserNAME and password is in
+PassWORD.  The following is a snipped from a set & include sequence:
+
+    :
+    :
+!define UserNAME {krista}
+!define PassWORD {1234}
+!include -c LoginTestTemplate
+
+!define UserNAME {bobby}
+!define PassWORD {43231}
+!include -c LoginTestTemplate
+
+!define UserNAME {jeremy}
+!define PassWORD {2468}
+!include -c LoginTestTemplate
+    :
+    :
+
+Also, !include -seamless ... has a cleaner look, but makes editing a
+little more cumbersome.
+
+--- In fitnesse@..., "kristam898" <krista.m.bledsoe@...>
+wrote:
+>
+> I am trying to automate some tests using both FitNesse and
+Selenium. I
+> am using a DoFixture from the Fitlibrary for .NET.  I've got
+everything
+> working properly, except I would like to see if there is a way to
+vary
+> the input for the FitNesse test. For example, here is my FitNesse
+test:
+>
+> |!SeleniumFixture-!|
+> |open|/MyWebApp/||
+> |clickAndWait|//img[@alt='button image']||
+> |User types|Login_Username|into|krista|field|
+> |User types|Login_Password|into|1234|field|
+> |clickAndWait|//input[@value='Log In']|
+>
+> I would like to be able to set the username & password fields
+(krista,
+> 1234) to another Fitnesse table (or external file), then have
+FitNesse
+> loop through each of the data points. I have been searching and
+> brainstorming different ways to do this, but I haven't come up with
+> anything yet. Does anyone have any ideas on this?? Any help is
+greatly
+> appreciated!!!
+>
+
+
+
+	
+Re: FitNesse & Selenium - Varying Input on FitNesse Tests
+Click to flag this post
+
+by Gojko Adzic Dec 19, 2007; 08:47pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Print | View Threaded | Show Only this Message
+you could define all those as variables, and then have a bunch of test
+suites that set those variables in SetUp.  All those test suites should
+  import actual test pages using symbolic links, so that you can edit
+and maintain them in one place.
+
+-- 
+gojko adzic
+http://gojko.net
+
+kristam898 wrote:
+
+> I am trying to automate some tests using both FitNesse and Selenium. I
+> am using a DoFixture from the Fitlibrary for .NET.  I've got everything
+> working properly, except I would like to see if there is a way to vary
+> the input for the FitNesse test. For example, here is my FitNesse test:
+>
+> |!SeleniumFixture-!|
+> |open|/MyWebApp/||
+> |clickAndWait|//img[@alt='button image']||
+> |User types|Login_Username|into|krista|field|
+> |User types|Login_Password|into|1234|field|
+> |clickAndWait|//input[@value='Log In']|
+>
+> I would like to be able to set the username & password fields (krista,
+> 1234) to another Fitnesse table (or external file), then have FitNesse
+> loop through each of the data points. I have been searching and
+> brainstorming different ways to do this, but I haven't come up with
+> anything yet. Does anyone have any ideas on this?? Any help is greatly
+> appreciated!!!
+>
+>
+>
+>  
+> Yahoo! Groups Links
+>
+>
+>
+>
+... [show rest of quote]
+
+
+« Search Nabble for "fitnesse Parameterized"
+
+
+
+
+!*< test page content definition
+!define pageContent (!include -setup SetUp
+!include IncludedPage
+Including page name is !-${PAGE_NAME}-!
+!include -teardown TearDown)
+
+*!
+
+!|script|
+|create page|SetUp|with content|Set Up page name is !-${PAGE_NAME}-!|
+|create page|TearDown|with content|Tear Down page name is !-${PAGE_NAME}-!|
+|create page|IncludedPage|with content|Included page name is !-${PAGE_NAME}-!|
+|given page|IncludingPage|with content|${pageContent}|
+|it should contain|Included page name is <a href="IncludedPage">IncludedPage|
+|it should contain|Including page name is <a href="IncludingPage">IncludingPage|
+|it should contain|Set Up page name is <a href="IncludingPage">IncludingPage|
+|it should contain|Tear Down page name is <a href="IncludingPage">IncludingPage|
+
+
+
+
+
+
+
+
+!include -c .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!|com.gtsce.wlr.fitnesse.WlrOrderBaseFixture|
+!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+
+
+|Import|
+|com.gtsce.wlr.fitnesse|
+|test fixture|
+| set up test |
+
+
+#!|com.gtsce.wlr.fitnesse.TestFixture|
+
+
+#!include .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!| set up test |
+
+
+
+
+
+
+|Import|
+|com.gtsce.wlr.fitnesse|
+
+!|TestSetup|
+| set up test |
+
+#!include -c .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!|com.gtsce.wlr.fitnesse.WlrOrderBaseFixture|
+#!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+
+
+#|Import|
+#|com.gtsce.wlr.fitnesse|
+#|test fixture|
+#| set up test |
+
+
+#!|com.gtsce.wlr.fitnesse.TestFixture|
+
+
+#!include .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!| set up test |
+
+
+
+
+!include -c .WlrSuit.WlrOrderSuite.ReceiveAbort
+!*< classpath
+!path classes
+!path lib/*.jar
+*!
+
+#!include -setup .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!|com.gtsce.wlr.fitnesse.WlrOrderBaseFixture|
+
+
+
+!include .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+
+#|Import|
+#|com.gtsce.wlr.fitnesse|
+#|test fixture|
+#| set up test |
+
+
+#!|com.gtsce.wlr.fitnesse.TestFixture|
+
+
+#!include .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!| set up test |
+
+
+!include -teardown .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+
+
+
+
+
+
+
+!*> scenario
+
+*!
+
+
+
+
+
+
+
+|Import|
+|fitnesse.slim.test|
+|fitnesse.fixtures|
+|com.gtsce.wlr.fitnesse|
+
+!include -c .WlrSuit.WlrOrderSuite.ReceiveAbort
+#.WlrSuit.WlrOrderSuite.ReceiveAbort
+
+
+#!include -setup .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!|com.gtsce.wlr.fitnesse.WlrOrderBaseFixture|
+
+
+!*> Scenarios
+!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+
+*!
+
+#|Import|
+#|com.gtsce.wlr.fitnesse|
+#|test fixture|
+#| set up test |
+
+
+#!|com.gtsce.wlr.fitnesse.TestFixture|
+
+
+#!include .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+#!| set up test |
+
+
+!include -teardown .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+
+
+|Import|
+|fitnesse.slim.test|
+|fitnesse.fixtures|
+|com.gtsce.wlr.fitnesse|
+
+!*> Setup
+
+!|WlrOrderSetupFixture|
+| set up test |
+|NULL|
+
+*!
+
+!*> Scenarios
+!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+
+*!
+
+
+
+!include -teardown .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+--------------------------------------------------------------------
+
+
+!|com.gtsce.wlr.fitnesse.WlrOrderSetupFixture|
+
+| set | WLR_ORDER_BASIC_TEST_CASE | up test |
+
+#!*> Setup
+
+#!|WlrOrderSetupFixture|
+#| set up test |
+#|WLR_ORDER_BASIC_TEST_CASE|
+#*!
+
+
+
+#!*> Scenarios
+#!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+#*!
+
+#!include -teardown .WlrSuit.WlrOrderSuite.ReceiveAbort
+
+
+----------------------------------------------------------------------
+
+
+
+#|Import|
+#|fitnesse.slim.test|
+#|fitnesse.fixtures|
+#|com.gtsce.wlr.fitnesse|
+#|Import|
+#|com.gtsce.wlr.fitnesse|
+!|com.gtsce.wlr.fitnesse.WlrOrderBaseFixture|
+
+!2 Przypadek testowy: Z³o¿enie zamówienia i przeprocesowanie.
+
+!5 Ustawienie parametrów zak³adanej sprawy
+!5 Dodanie zamówienia:
+| create order |
+
+!5 Dodanie linii:
+| add line |
+
+!5 Wyœwietlenie parametrów nag³ówka wiadomoœci do wys³ania:
+| show | interaction id |
+| show | sender id |
+| show | recipient |
+| show | send date |
+
+!5 Wyœwietlenie parametrów sk³adanego zamówienia(paczki):
+#| show | wlr message as xml |
+| show | package id |
+| show | generate date |
+| show | operator |
+| show | size |
+
+!5 Weryfikacja czy proces zacz¹³ przetwarzaæ zamówienie:
+| check processing message by job |
+!5 Sprawdzenie czy proces wys³a³ wiadomoœæ ORDER-WLR-SERVICE-PACKAGE do TP S.A.
+!| check | message | TRUE | with status sent | SUCCESSFULLY |
+!5 Sprawdzenie czy wiadomoœæ dotar³a do skrzynki mailowej TP S.A.
+!| check | message sent by email | SUCCESSFULLY |
+!5 Wys³anie komunikatu ORDER-WLR-SERVICE-PACKAGE-ACK od TP S.A.
+!| check | send acknowledgement from tp | SUCCESSFULLY |
+!5 Sprawdzenie czy proces prawid³owo odebra³ i przetworzy³ ACK z TP S.A.
+!|package with status realization|
+!5 Wys³anie komunikatu ORDER-WLR-SERVICE-PACKAGE-REPLY(grupy odpowiedzi na zamówienie) od TP S.A.
+!| check | send service package reply from tp | SUCCESSFULLY |
+!5 Sprawdzenie czy linie s¹ aktywne.
+!| check | line with status active | ACTIVE |
+!5 Sprawdzenie czy wiadomoœæ dotar³a do skrzynki mailowej TP S.A.(ORDER-WLR-SERVICE-PACKAGE-REPLY-ACK)
+!| check | send ack from Gts | SUCCESSFULLY |
+!5 Wys³anie komunikatu ORDER-WLR-SERVICE-STATUS-PACKAGE-REPLY od TP S.A.
+!| check | send service status package reply from tp | SUCCESSFULLY |
+!5 Sprawdzenie czy wiadomoœæ dotar³a do skrzynki mailowej TP S.A.(ORDER-WLR-SERVICE-STATUS-PACKAGE-REPLY-ACK)
+!| check | send ack from Gts | SUCCESSFULLY |
+
+-------------------------------------------------------------------
+
+----------------------------------------------------------
+!wa¿ne
+
+!content
+#|Import|
+#|fitnesse.slim.test|
+#|fitnesse.fixtures|
+#|com.gtsce.wlr.fitnesse|
+
+#!*> Setup
+#!|WlrOrderSetupFixture|
+#| set up test |
+#|WLR_ORDER_BASIC_TEST_CASE|
+#*!
+
+#!*> Scenarios
+#!include .WlrSuit.WlrOrderSuite.CreateAndProcessOrderHappyPath
+#*!
+#!include -teardown .WlrSuit.WlrOrderSuite.ReceiveAbort
+-----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
