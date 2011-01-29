@@ -1,0 +1,10 @@
+
+design patterns
+
+http://en.wikipedia.org/wiki/Separation_of_concerns
+
+http://sourcemaking.com/design_patterns
+
+http://sourcemaking.com/design_patterns/bridge/java/3
+
+http://sourcemaking.com/design_patterns/flyweight/java/1
